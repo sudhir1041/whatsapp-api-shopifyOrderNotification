@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model WhatsAppSettings {
+  id                      String @id @default(cuid())
+  shop                    String @unique
+  facebookUrl             String?
+  phoneId                 String?
+  accessToken             String?
+  orderTemplateName       String?
+  fulfillmentTemplateName String?
+  helloWorldTemplateName  String?
+  abandonedCartTemplateName String?
+  welcomeSeriesTemplateName String?
+  templateLanguage        String?
+  abandonmentDelayHours   Int? @default(1)
+  enableAbandonmentReminders Boolean @default(true)
+  maxReminders            Int? @default(3)
+  reminderIntervalHours   Int? @default(24)
+  hasButton               Boolean @default(false)
+  emailApiKey             String?
+  fromEmail               String?
+  smsAccountSid           String?
+  smsAuthToken            String?
+  testPhoneNumber         String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model WhatsAppTemplate {
+  id          String @id @default(cuid())
+  shop        String
+  type        String // "order" or "fulfillment"
+  template    String
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([shop, type])
+}
+
+model Automation {
+  id          String @id @default(cuid())
+  shop        String
+  name        String
+  channel     String // "email", "whatsapp", "sms"
+  trigger     String // "customer_created", "order_placed", "order_fulfilled", etc.
+  isActive    Boolean @default(true)
+  subject     String?
+  message     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  executions  AutomationExecution[]
+}
+
+model AutomationExecution {
+  id           String @id @default(cuid())
+  automationId String
+  customerId   String?
+  orderId      String?
+  status       String // "pending", "sent", "failed"
+  errorMessage String?
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+  
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id            String @id @default(cuid())
+  cartId        String
+  shop          String
+  customerEmail String?
+  customerPhone String?
+  lineItems     String // JSON string of cart items
+  totalPrice    String?
+  currency      String?
+  status        String @default("active") // "active", "abandoned", "converted"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([cartId, shop])
+}
