@@ -26,6 +26,7 @@ export default function App() {
         <Link to="/app/templates">Templates</Link>
         <Link to="/app/marketing-automation">Marketing Automation</Link>
         <Link to="/app/cart-abandonment">Cart Abandonment</Link>
+        <Link to="/app/email-settings">Email Settings</Link>
         <Link to="/app/settings">Settings</Link>
       </NavMenu>
       <Outlet />

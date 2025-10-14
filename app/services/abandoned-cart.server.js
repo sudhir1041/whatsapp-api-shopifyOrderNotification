@@ -117,28 +117,44 @@ async function processShopAbandonedCarts(shopSettings) {
           });
         }
         
-        // Send abandoned cart message if phone available
+        // Prepare common variables
+        const lineItems = JSON.parse(cart.lineItems || '[]');
+        const productNames = lineItems.map(item => item.title).join(', ') || 'items';
+        const currency = cart.currency === 'INR' ? '₹' : '$';
+        const totalPrice = `${currency}${cart.totalPrice}`;
+        const reminderNumber = existingReminders + 1;
+        
+        const variables = {
+          firstName: "Customer",
+          customerName: "Customer",
+          productName: productNames,
+          cartTotal: totalPrice,
+          totalPrice: totalPrice,
+          itemCount: lineItems.length,
+          storeName: shop.replace('.myshopify.com', ''),
+          shopName: shop.replace('.myshopify.com', ''),
+          cartUrl: `https://${shop}/cart`
+        };
+        
+        let messageSent = false;
+        
+        // Send WhatsApp message if phone available
         if (cart.customerPhone) {
-          const lineItems = JSON.parse(cart.lineItems || '[]');
-          const productNames = lineItems.map(item => item.title).join(', ') || 'items';
-          
-          const currency = cart.currency === 'INR' ? '₹' : '$';
-          const totalPrice = `${currency}${cart.totalPrice}`;
-          
-          // Get appropriate template for this reminder number
-          const reminderNumber = existingReminders + 1;
-          const template = templates.find(t => t.reminderNumber === reminderNumber) || templates[0];
-          
-          const variables = {
-            firstName: "Customer",
-            productName: productNames,
-            cartTotal: totalPrice,
-            storeName: shop.replace('.myshopify.com', ''),
-            cartUrl: `https://${shop}/cart`
-          };
-          
-          await sendWhatsAppMessage(shop, cart.customerPhone, "abandoned_cart", variables);
-          
+          try {
+            const template = templates.find(t => t.reminderNumber === reminderNumber) || templates[0];
+            await sendWhatsAppMessage(shop, cart.customerPhone, "abandoned_cart", variables);
+            messageSent = true;
+            console.log(`WhatsApp reminder ${reminderNumber} sent for cart ${cart.cartId}`);
+          } catch (error) {
+            console.error(`Failed to send WhatsApp for cart ${cart.cartId}:`, error);
+          }
+        }
+        
+        // TODO: Add email functionality later
+        // Email sending will be implemented separately
+        
+        // Only proceed if at least one message was sent
+        if (messageSent) {
           // Create automation record and execution
           let automation = await db.automation.findFirst({
             where: { 

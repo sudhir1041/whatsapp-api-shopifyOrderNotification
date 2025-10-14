@@ -53,8 +53,29 @@ model WhatsAppSettings {
   smsAccountSid           String?
   smsAuthToken            String?
   testPhoneNumber         String?
+  // SMTP Settings
+  smtpHost                String?
+  smtpPort                Int?
+  smtpUser                String?
+  smtpPassword            String?
+  smtpSecure              Boolean @default(true)
+  enableEmailAutomation   Boolean @default(false)
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id          String @id @default(cuid())
+  shop        String
+  type        String // "order", "fulfillment", "abandoned_cart", "welcome"
+  subject     String
+  htmlContent String
+  textContent String?
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([shop, type])
 }
 
 model WhatsAppTemplate {
@@ -107,6 +128,8 @@ model Cart {
   totalPrice    String?
   currency      String?
   status        String @default("active") // "active", "abandoned", "converted"
+  emailSent     Boolean @default(false)
+  emailSentAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

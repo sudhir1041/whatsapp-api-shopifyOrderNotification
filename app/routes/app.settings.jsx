@@ -16,8 +16,9 @@ import {
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { useState } from "react";
-import { useLoaderData, Form, useActionData } from "@remix-run/react";
+import { useLoaderData, Form, useActionData, useSubmit } from "@remix-run/react";
 import db from "../db.server";
+import { testSMSConnection, sendSMS } from "../utils/sms.server";
 
 async function testWhatsAppConnection(accessToken, phoneId) {
   const response = await fetch(`https://graph.facebook.com/v18.0/${phoneId}`, {
@@ -143,6 +144,8 @@ export const loader = async ({ request }) => {
         testPhoneNumber: whatsappSettings?.testPhoneNumber || "",
         facebookUrl: whatsappSettings?.facebookUrl || "",
         templateLanguage: whatsappSettings?.templateLanguage || "en_US",
+        smsAccountSid: whatsappSettings?.smsAccountSid || "",
+        smsAuthToken: whatsappSettings?.smsAuthToken || "",
         emailProvider: "sendgrid",
         smsProvider: "twilio",
         enableNotifications: true,
@@ -201,6 +204,7 @@ export const action = async ({ request }) => {
     const fromEmail = formData.get("fromEmail");
     const smsAccountSid = formData.get("smsAccountSid");
     const smsAuthToken = formData.get("smsAuthToken");
+    const testSmsNumber = formData.get("testSmsNumber");
     
     // Handle WhatsApp connection test
     if (action === "test_whatsapp") {
@@ -209,6 +213,43 @@ export const action = async ({ request }) => {
         return { success: "WhatsApp connection test successful! API is working." };
       } catch (error) {
         return { error: `WhatsApp connection test failed: ${error.message}` };
+      }
+    }
+    
+    // Handle SMS connection test
+    if (action === "test_sms") {
+      try {
+        const result = await testSMSConnection(session.shop);
+        if (result.success) {
+          return { success: "SMS connection test successful!" };
+        } else {
+          return { error: `SMS connection test failed: ${result.error}` };
+        }
+      } catch (error) {
+        return { error: `SMS connection test failed: ${error.message}` };
+      }
+    }
+    
+    // Handle SMS test message
+    if (action === "send_test_sms") {
+      if (!testSmsNumber) {
+        return { error: "Please enter a test SMS number." };
+      }
+      
+      try {
+        const result = await sendSMS({
+          shop: session.shop,
+          to: testSmsNumber,
+          message: `Test SMS from WaNotify app. Shop: ${session.shop}. Sent at: ${new Date().toLocaleString()}`
+        });
+        
+        if (result.success) {
+          return { success: `Test SMS sent successfully to ${testSmsNumber}!` };
+        } else {
+          return { error: `Failed to send test SMS: ${result.error}` };
+        }
+      } catch (error) {
+        return { error: `Failed to send test SMS: ${error.message}` };
       }
     }
     
@@ -279,6 +320,8 @@ export const action = async ({ request }) => {
       testPhoneNumber: testPhoneNumber || "",
       facebookUrl: facebookUrl || "",
       templateLanguage: templateLanguage || "en_US",
+      smsAccountSid: smsAccountSid || "",
+      smsAuthToken: smsAuthToken || "",
     };
     
     console.log('Data to save:', dataToSave);
@@ -311,6 +354,7 @@ export const action = async ({ request }) => {
 export default function Settings() {
   const { settings, usage } = useLoaderData();
   const actionData = useActionData();
+  const submit = useSubmit();
   const [whatsappToken, setWhatsappToken] = useState(settings.whatsappToken);
   const [phoneId, setPhoneId] = useState(settings.phoneId);
   const [orderTemplateName, setOrderTemplateName] = useState(settings.orderTemplateName);
@@ -323,8 +367,9 @@ export default function Settings() {
   const [templateLanguage, setTemplateLanguage] = useState(settings.templateLanguage || "en_US");
   const [emailApiKey, setEmailApiKey] = useState("");
   const [fromEmail, setFromEmail] = useState("");
-  const [smsAccountSid, setSmsAccountSid] = useState("");
-  const [smsAuthToken, setSmsAuthToken] = useState("");
+  const [smsAccountSid, setSmsAccountSid] = useState(settings.smsAccountSid || "");
+  const [smsAuthToken, setSmsAuthToken] = useState(settings.smsAuthToken || "");
+  const [testSmsNumber, setTestSmsNumber] = useState("");
   const [emailProvider, setEmailProvider] = useState(settings.emailProvider);
   const [smsProvider, setSmsProvider] = useState(settings.smsProvider);
   const [enableNotifications, setEnableNotifications] = useState(settings.enableNotifications);
@@ -465,27 +510,12 @@ export default function Settings() {
                       <Divider />
                       
                       <Text as="h3" variant="headingMd">Email Configuration</Text>
-                      <Select
-                        label="Email Service Provider"
-                        options={emailProviders}
-                        value={emailProvider}
-                        onChange={setEmailProvider}
-                      />
-                      <TextField
-                        label="API Key"
-                        name="emailApiKey"
-                        value={emailApiKey}
-                        onChange={setEmailApiKey}
-                        placeholder="Enter your email provider API key"
-                        type="password"
-                      />
-                      <TextField
-                        label="From Email"
-                        name="fromEmail"
-                        value={fromEmail}
-                        onChange={setFromEmail}
-                        placeholder="noreply@yourstore.com"
-                      />
+                      <Text as="p" variant="bodyMd" tone="subdued">
+                        Configure SMTP server settings for email automation
+                      </Text>
+                      <Button url="/app/email-settings" variant="secondary">
+                        Configure Email Settings
+                      </Button>
                       
                       <Divider />
                       
@@ -510,6 +540,18 @@ export default function Settings() {
                         onChange={setSmsAuthToken}
                         placeholder="Enter your SMS provider auth token"
                         type="password"
+                      />
+                      
+                      <Divider />
+                      
+                      <Text as="h3" variant="headingMd">Test SMS Service</Text>
+                      <TextField
+                        label="Test SMS Number"
+                        name="testSmsNumber"
+                        value={testSmsNumber}
+                        onChange={setTestSmsNumber}
+                        placeholder="+1234567890"
+                        helpText="Enter phone number with country code to test SMS service"
                       />
                     </FormLayout>
                   </BlockStack>
@@ -575,23 +617,62 @@ export default function Settings() {
                     </InlineStack>
                     <InlineStack align="space-between">
                       <Text as="span" variant="bodyMd">SMS</Text>
-                      <Text as="span" variant="bodyMd" tone="warning">Not Configured</Text>
+                      <Text as="span" variant="bodyMd" tone={smsAccountSid && smsAuthToken ? "success" : "warning"}>
+                        {smsAccountSid && smsAuthToken ? "Connected" : "Not Configured"}
+                      </Text>
                     </InlineStack>
                   </BlockStack>
                   <BlockStack gap="200">
                     <Button fullWidth variant="secondary">Test All Connections</Button>
-                    <form method="post" style={{width: '100%'}}>
-                      <input type="hidden" name="action" value="test_whatsapp" />
-                      <Button fullWidth variant="secondary" submit disabled={!whatsappToken || !phoneId}>
-                        Test WhatsApp Connection
-                      </Button>
-                    </form>
-                    <form method="post" style={{width: '100%'}}>
-                      <input type="hidden" name="action" value="send_hello_world" />
-                      <Button fullWidth variant="primary" submit disabled={!whatsappToken || !phoneId}>
-                        Send Hello World Test
-                      </Button>
-                    </form>
+                    <Button 
+                      fullWidth 
+                      variant="secondary" 
+                      disabled={!whatsappToken || !phoneId}
+                      onClick={() => {
+                        const formData = new FormData();
+                        formData.append('action', 'test_whatsapp');
+                        submit(formData, { method: 'post' });
+                      }}
+                    >
+                      Test WhatsApp Connection
+                    </Button>
+                    <Button 
+                      fullWidth 
+                      variant="primary" 
+                      disabled={!whatsappToken || !phoneId}
+                      onClick={() => {
+                        const formData = new FormData();
+                        formData.append('action', 'send_hello_world');
+                        submit(formData, { method: 'post' });
+                      }}
+                    >
+                      Send Hello World Test
+                    </Button>
+                    <Button 
+                      fullWidth 
+                      variant="secondary" 
+                      disabled={!smsAccountSid || !smsAuthToken}
+                      onClick={() => {
+                        const formData = new FormData();
+                        formData.append('action', 'test_sms');
+                        submit(formData, { method: 'post' });
+                      }}
+                    >
+                      Test SMS Connection
+                    </Button>
+                    <Button 
+                      fullWidth 
+                      variant="secondary" 
+                      disabled={!smsAccountSid || !smsAuthToken || !testSmsNumber}
+                      onClick={() => {
+                        const formData = new FormData();
+                        formData.append('action', 'send_test_sms');
+                        formData.append('testSmsNumber', testSmsNumber);
+                        submit(formData, { method: 'post' });
+                      }}
+                    >
+                      Send Test SMS
+                    </Button>
                   </BlockStack>
                 </BlockStack>
               </Card>

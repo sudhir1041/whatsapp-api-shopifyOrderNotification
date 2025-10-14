@@ -98,45 +98,61 @@ export const action = async ({ request }) => {
     };
 
     try {
-      // Send WhatsApp notification
-      await sendWhatsAppMessage(shop, formattedPhone, "order", variables);
+      let messageSent = false;
       
-      // Create or find automation record for webhook
-      let automation = await db.automation.findFirst({
-        where: { shop, name: 'Order Paid Webhook', trigger: 'order_placed' }
-      });
-      
-      if (!automation) {
-        automation = await db.automation.create({
-          data: {
-            shop,
-            name: 'Order Paid Webhook',
-            channel: 'whatsapp',
-            trigger: 'order_placed',
-            message: 'Order confirmation sent via WhatsApp',
-            isActive: true,
-          },
-        });
+      // Send WhatsApp notification if phone available
+      if (formattedPhone) {
+        try {
+          await sendWhatsAppMessage(shop, formattedPhone, "order", variables);
+          messageSent = true;
+          console.log('WhatsApp order confirmation sent');
+        } catch (whatsappError) {
+          console.error('WhatsApp send failed:', whatsappError);
+        }
       }
       
-      // Save execution record for analytics
-      const execution = await db.automationExecution.create({
-        data: {
-          automationId: automation.id,
-          customerId: order.customer?.id?.toString(),
-          orderId: order.id?.toString(),
-          status: 'sent',
-          sentAt: new Date(),
-        },
-      });
+      // TODO: Add email functionality later
+      // Email notifications will be implemented separately
       
-      console.log('WhatsApp message sent and execution recorded:', {
-        executionId: execution.id,
-        automationId: automation.id,
-        automationName: automation.name,
-        status: execution.status,
-        sentAt: execution.sentAt
-      });
+      // Only create automation record if at least one message was sent
+      if (messageSent) {
+        // Create or find automation record for webhook
+        let automation = await db.automation.findFirst({
+          where: { shop, name: 'Order Paid Webhook', trigger: 'order_placed' }
+        });
+        
+        if (!automation) {
+          automation = await db.automation.create({
+            data: {
+              shop,
+              name: 'Order Paid Webhook',
+              channel: 'whatsapp',
+              trigger: 'order_placed',
+              message: 'Order confirmation sent via WhatsApp',
+              isActive: true,
+            },
+          });
+        }
+        
+        // Save execution record for analytics
+        const execution = await db.automationExecution.create({
+          data: {
+            automationId: automation.id,
+            customerId: order.customer?.id?.toString(),
+            orderId: order.id?.toString(),
+            status: 'sent',
+            sentAt: new Date(),
+          },
+        });
+        
+        console.log('WhatsApp message sent and execution recorded:', {
+          executionId: execution.id,
+          automationId: automation.id,
+          automationName: automation.name,
+          status: execution.status,
+          sentAt: execution.sentAt
+        });
+      }
     } catch (error) {
       console.error('Failed to send WhatsApp message:', error);
       
