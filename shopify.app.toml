@@ -1,14 +1,14 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "af195b240516fde12071c40091581d24"
+client_id = "d202a1f553d02ff71b85d29633119de9"
 name = "WaNotify"
 handle = "wanotify-app-2025"
-application_url = "https://saving-drake-eternal.ngrok-free.app"
+application_url = "https://octantal-adriane-removably.ngrok-free.dev"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
+dev_store_url = ""
 
 [webhooks]
 api_version = "2025-07"
@@ -58,7 +58,11 @@ api_version = "2025-07"
 scopes = "read_orders,write_orders,write_products,read_customers"
 
 [auth]
-redirect_urls = ["https://saving-drake-eternal.ngrok-free.app/auth/callback", "https://saving-drake-eternal.ngrok-free.app/auth/shopify/callback", "https://saving-drake-eternal.ngrok-free.app/api/auth/callback"]
+redirect_urls = [
+  "https://octantal-adriane-removably.ngrok-free.dev/auth/callback",
+  "https://octantal-adriane-removably.ngrok-free.dev/auth/shopify/callback", 
+  "https://octantal-adriane-removably.ngrok-free.dev/api/auth/callback"
+]
 
 [pos]
 embedded = false

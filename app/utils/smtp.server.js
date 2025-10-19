@@ -5,12 +5,19 @@ const require = createRequire(import.meta.url);
 
 export async function sendEmail({ shop, to, subject, html, text }) {
   try {
+    console.log('=== MULTI-STORE EMAIL SERVICE ===');
+    console.log('Shop:', shop);
+    
     const settings = await db.whatsAppSettings.findUnique({
       where: { shop }
     });
 
-    if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
-      throw new Error('SMTP settings not configured');
+    if (!settings) {
+      throw new Error(`No settings found for shop: ${shop}`);
+    }
+
+    if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
+      throw new Error(`SMTP settings not configured for shop: ${shop}`);
     }
 
     // Use require to import nodemailer
@@ -26,9 +33,8 @@ export async function sendEmail({ shop, to, subject, html, text }) {
       },
     });
 
-    console.log('=== SENDING REAL EMAIL ===');
+    console.log('=== SENDING EMAIL FOR SHOP:', shop, '===');
     console.log('SMTP Host:', settings.smtpHost);
-    console.log('SMTP Port:', settings.smtpPort);
     console.log('SMTP User:', settings.smtpUser);
     console.log('From:', settings.fromEmail || settings.smtpUser);
     console.log('To:', to);
@@ -42,22 +48,28 @@ export async function sendEmail({ shop, to, subject, html, text }) {
       text,
     });
 
-    console.log('Email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    console.log(`Email sent successfully for ${shop}:`, info.messageId);
+    return { success: true, messageId: info.messageId, shop };
   } catch (error) {
-    console.error('Email send error:', error);
-    return { success: false, error: error.message };
+    console.error(`Email send error for ${shop}:`, error);
+    return { success: false, error: error.message, shop };
   }
 }
 
 export async function testEmailConnection(shop) {
   try {
+    console.log('=== TESTING EMAIL CONNECTION FOR SHOP:', shop, '===');
+    
     const settings = await db.whatsAppSettings.findUnique({
       where: { shop }
     });
 
-    if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
-      return { success: false, error: 'SMTP settings not configured' };
+    if (!settings) {
+      return { success: false, error: `No settings found for shop: ${shop}` };
+    }
+
+    if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
+      return { success: false, error: `SMTP settings not configured for shop: ${shop}` };
     }
 
     const nodemailer = require('nodemailer');
@@ -73,10 +85,10 @@ export async function testEmailConnection(shop) {
     });
 
     await transporter.verify();
-    console.log('SMTP connection verified successfully');
-    return { success: true };
+    console.log(`SMTP connection verified successfully for ${shop}`);
+    return { success: true, shop };
   } catch (error) {
-    console.error('SMTP connection error:', error);
-    return { success: false, error: error.message };
+    console.error(`SMTP connection error for ${shop}:`, error);
+    return { success: false, error: error.message, shop };
   }
 }

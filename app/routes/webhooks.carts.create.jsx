@@ -11,10 +11,32 @@ export const action = async ({ request }) => {
     
     const cart = payload;
     
+    // Extract phone from multiple sources
+    let phoneNumber = cart.phone || 
+                     cart.billing_address?.phone || 
+                     cart.shipping_address?.phone || 
+                     cart.customer?.phone || 
+                     cart.customer?.default_address?.phone;
+    
+    // Extract email from multiple sources
+    let email = cart.email || 
+               cart.customer?.email || 
+               cart.billing_address?.email || 
+               cart.shipping_address?.email;
+    
+    console.log('Extracted contact info:', {
+      originalPhone: cart.phone,
+      extractedPhone: phoneNumber,
+      originalEmail: cart.email,
+      extractedEmail: email,
+      billingPhone: cart.billing_address?.phone,
+      shippingPhone: cart.shipping_address?.phone
+    });
+    
     // Store cart data for abandoned cart tracking
     const cartData = {
-      customerEmail: cart.email || null,
-      customerPhone: cart.phone || null,
+      customerEmail: email || null,
+      customerPhone: phoneNumber || null,
       lineItems: JSON.stringify(cart.line_items || []),
       totalPrice: cart.total_price || '0',
       currency: cart.currency || 'USD',

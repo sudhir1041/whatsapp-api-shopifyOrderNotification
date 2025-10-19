@@ -1,5 +1,14 @@
 import db from "../db.server";
 import { sendWhatsAppMessage } from "../utils/whatsapp.server";
+import { sendEmail } from "../utils/smtp.server";
+
+function replaceEmailVariables(template, variables) {
+  let content = template;
+  Object.entries(variables).forEach(([key, value]) => {
+    content = content.replace(new RegExp(`{{${key}}}`, 'g'), value || '');
+  });
+  return content;
+}
 
 export async function processAbandonedCarts() {
   console.log('=== PROCESSING ABANDONED CARTS ===');
@@ -150,8 +159,53 @@ async function processShopAbandonedCarts(shopSettings) {
           }
         }
         
-        // TODO: Add email functionality later
-        // Email sending will be implemented separately
+        // Send email if email available and email automation enabled for this shop
+        if (cart.customerEmail && shopSettings.enableEmailAutomation && !cart.emailSent) {
+          try {
+            console.log(`Attempting to send email for cart ${cart.cartId} in shop ${shop}`);
+            
+            const emailTemplate = await db.emailTemplate.findUnique({
+              where: {
+                shop_type: {
+                  shop: shop,
+                  type: 'abandoned_cart'
+                }
+              }
+            });
+            
+            if (emailTemplate && emailTemplate.isActive) {
+              const subject = replaceEmailVariables(emailTemplate.subject, variables);
+              const html = replaceEmailVariables(emailTemplate.htmlContent, variables);
+              const text = emailTemplate.textContent ? replaceEmailVariables(emailTemplate.textContent, variables) : undefined;
+              
+              const emailResult = await sendEmail({
+                shop,
+                to: cart.customerEmail,
+                subject,
+                html,
+                text
+              });
+              
+              if (emailResult.success) {
+                await db.cart.update({
+                  where: { id: cart.id },
+                  data: { 
+                    emailSent: true,
+                    emailSentAt: new Date()
+                  }
+                });
+                messageSent = true;
+                console.log(`Email reminder sent for cart ${cart.cartId} in shop ${shop}`);
+              } else {
+                console.error(`Email send failed for cart ${cart.cartId} in shop ${shop}:`, emailResult.error);
+              }
+            } else {
+              console.log(`No active email template found for abandoned_cart in shop ${shop}`);
+            }
+          } catch (error) {
+            console.error(`Failed to send email for cart ${cart.cartId} in shop ${shop}:`, error);
+          }
+        }
         
         // Only proceed if at least one message was sent
         if (messageSent) {
