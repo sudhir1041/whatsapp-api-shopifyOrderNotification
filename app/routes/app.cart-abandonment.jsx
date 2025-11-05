@@ -152,8 +152,32 @@ export default function CartAbandonment() {
   const cartRows = abandonedCarts.map(cart => {
     const lineItems = JSON.parse(cart.lineItems || '[]');
     const productNames = lineItems.map(item => item.title).join(', ') || 'No items';
-    const currency = cart.currency === 'INR' ? '₹' : '$';
-    const total = `${currency}${cart.totalPrice || '0'}`;
+    
+    // Auto-detect currency symbol with Indian store detection
+    const getCurrencySymbol = (currencyCode, shopDomain) => {
+      const symbols = {
+        'INR': '₹',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CAD': 'C$',
+        'AUD': 'A$',
+        'SGD': 'S$',
+        'AED': 'د.إ',
+        'SAR': 'ر.س'
+      };
+      
+      // Force INR for Indian stores or if currency is INR
+      if (currencyCode === 'INR' || shopDomain?.includes('india') || shopDomain?.includes('lalit')) {
+        return '₹';
+      }
+      
+      return symbols[currencyCode] || '₹'; // Default to INR for your store
+    };
+    
+    const currencySymbol = getCurrencySymbol(cart.currency, cart.shop);
+    const total = `${currencySymbol}${cart.totalPrice || '0'}`;
     const timeSince = Math.round((new Date() - new Date(cart.updatedAt)) / (1000 * 60 * 60));
     
     return [

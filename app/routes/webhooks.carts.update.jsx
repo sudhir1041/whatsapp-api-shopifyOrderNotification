@@ -8,6 +8,7 @@ export const action = async ({ request }) => {
     const { topic, shop, payload } = await authenticate.webhook(request);
     
     console.log('Cart updated:', { topic, shop, cartId: payload?.id });
+    console.log('Full cart payload:', JSON.stringify(payload, null, 2));
     
     const cart = payload;
     
@@ -16,13 +17,17 @@ export const action = async ({ request }) => {
                      cart.billing_address?.phone || 
                      cart.shipping_address?.phone || 
                      cart.customer?.phone || 
-                     cart.customer?.default_address?.phone;
+                     cart.customer?.default_address?.phone ||
+                     cart.attributes?.find(attr => attr.key === 'phone')?.value ||
+                     cart.note_attributes?.find(attr => attr.name === 'phone')?.value;
     
     // Extract email from multiple sources
     let email = cart.email || 
                cart.customer?.email || 
                cart.billing_address?.email || 
-               cart.shipping_address?.email;
+               cart.shipping_address?.email ||
+               cart.attributes?.find(attr => attr.key === 'email')?.value ||
+               cart.note_attributes?.find(attr => attr.name === 'email')?.value;
     
     // Update cart data
     const cartData = {
