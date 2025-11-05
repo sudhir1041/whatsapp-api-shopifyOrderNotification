@@ -120,8 +120,8 @@ nano .env
 **Update .env file with your VPS details:**
 ```bash
 NODE_ENV=production
-SHOPIFY_API_KEY=a2025f8cce4b8f141f39409f4baeec8b
-SHOPIFY_API_SECRET=dfc7395493e3a575d322117785a1254f
+SHOPIFY_API_KEY=
+SHOPIFY_API_SECRET=
 SCOPES=read_orders,write_orders,write_products,read_customers
 SHOPIFY_APP_URL=https://your-domain.com
 DATABASE_URL=mysql://wanotify:wanotify123@localhost:3306/wanotify
