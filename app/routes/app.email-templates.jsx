@@ -223,16 +223,16 @@ export default function EmailTemplates() {
               </Text>
               
               <Text variant="bodyMd">
-                <strong>Order Templates:</strong> {'{{customerName}}, {{orderNumber}}, {{totalPrice}}, {{shopName}}'}
+                <strong>Order Templates:</strong> customerName, orderNumber, totalPrice, shopName
               </Text>
               <Text variant="bodyMd">
-                <strong>Fulfillment Templates:</strong> {'{{customerName}}, {{orderNumber}}, {{trackingNumber}}, {{trackingUrl}}'}
+                <strong>Fulfillment Templates:</strong> customerName, orderNumber, trackingNumber, trackingUrl
               </Text>
               <Text variant="bodyMd">
-                <strong>Cart Abandonment:</strong> {'{{customerName}}, {{itemCount}}, {{totalPrice}}, {{cartUrl}}'}
+                <strong>Cart Abandonment:</strong> customerName, itemCount, totalPrice, cartUrl
               </Text>
               <Text variant="bodyMd">
-                <strong>Welcome Series:</strong> {'{{customerName}}, {{shopName}}, {{discountCode}}, {{discountAmount}}'}
+                <strong>Welcome Series:</strong> customerName, shopName, discountCode, discountAmount
               </Text>
             </BlockStack>
           </Card>

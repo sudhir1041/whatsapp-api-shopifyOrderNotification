@@ -1,11 +1,12 @@
 export const action = async ({ request }) => {
+  console.log('=== ORDER FULFILLED WEBHOOK TRIGGERED ===');
+  console.log('Request URL:', request.url);
+  console.log('Request method:', request.method);
+  
   const { authenticate } = await import("../shopify.server");
   const { sendWhatsAppMessage, formatProductNames } = await import("../utils/whatsapp.server");
   const { executeAutomations } = await import("../services/automation.server");
   const db = (await import("../db.server")).default;
-  console.log('=== ORDER FULFILLED WEBHOOK TRIGGERED ===');
-  console.log('Request URL:', request.url);
-  console.log('Request method:', request.method);
   
   try {
     const { topic, shop, payload } = await authenticate.webhook(request);
