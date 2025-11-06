@@ -9,8 +9,11 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY . .
+# Copy source code (excluding node_modules and build)
+COPY app ./app/
+COPY public ./public/
+COPY *.js *.json *.md *.toml ./
+COPY .env* ./
 
 # Generate Prisma client
 RUN npx prisma generate

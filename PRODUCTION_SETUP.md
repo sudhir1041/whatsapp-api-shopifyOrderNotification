@@ -2,10 +2,17 @@
 
 ## Quick Setup Steps
 
-### 1. Build and Start the App
+### 1. Deploy the App
 ```bash
 # In your project directory
-./start-production.sh
+./deploy-direct.sh
+```
+
+### 2. Start the App
+```bash
+export NODE_ENV=production
+export DATABASE_URL="file:./prisma/production.sqlite"
+npm run start
 ```
 
 ### 2. Configure Nginx (if not already done)
