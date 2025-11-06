@@ -1,9 +1,8 @@
-import { authenticate } from "../shopify.server";
-import { sendWhatsAppMessage } from "../utils/whatsapp.server";
-import { executeAutomations } from "../services/automation.server";
-import db from "../db.server";
-
 export const action = async ({ request }) => {
+  const { authenticate } = await import("../shopify.server");
+  const { sendWhatsAppMessage } = await import("../utils/whatsapp.server");
+  const { executeAutomations } = await import("../services/automation.server");
+  const db = (await import("../db.server")).default;
   console.log('=== CUSTOMER CREATE WEBHOOK TRIGGERED ===');
   
   try {

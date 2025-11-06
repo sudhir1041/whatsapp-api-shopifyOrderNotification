@@ -1,7 +1,6 @@
-import { authenticate } from "../shopify.server";
-import db from "../db.server";
-
 export const action = async ({ request }) => {
+  const { authenticate } = await import("../shopify.server");
+  const db = (await import("../db.server")).default;
   const { session } = await authenticate.admin(request);
   
   try {

@@ -1,7 +1,6 @@
-import { authenticate } from "../shopify.server";
-
 export const action = async ({ request }) => {
   try {
+    const { authenticate } = await import("../shopify.server");
     const { topic, shop, payload } = await authenticate.webhook(request);
     
     console.log('Customer data request webhook:', { topic, shop, payload });

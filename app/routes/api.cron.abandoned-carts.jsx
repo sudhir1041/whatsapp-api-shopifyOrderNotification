@@ -1,9 +1,8 @@
-import { processAbandonedCarts } from "../services/abandoned-cart.server";
-
 export const action = async ({ request }) => {
   console.log('=== ABANDONED CART CRON JOB TRIGGERED ===');
   
   try {
+    const { processAbandonedCarts } = await import("../services/abandoned-cart.server");
     await processAbandonedCarts();
     return new Response('Abandoned carts processed', { status: 200 });
   } catch (error) {

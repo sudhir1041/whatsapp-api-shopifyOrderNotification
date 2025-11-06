@@ -1,10 +1,9 @@
-import { authenticate } from "../shopify.server";
-import { sendWhatsAppMessage, formatProductNames } from "../utils/whatsapp.server";
-import { executeAutomations } from "../services/automation.server";
-import { markCartAsConverted } from "../services/abandoned-cart.server";
-import db from "../db.server";
-
 export const action = async ({ request }) => {
+  const { authenticate } = await import("../shopify.server");
+  const { sendWhatsAppMessage, formatProductNames } = await import("../utils/whatsapp.server");
+  const { executeAutomations } = await import("../services/automation.server");
+  const { markCartAsConverted } = await import("../services/abandoned-cart.server");
+  const db = (await import("../db.server")).default;
   console.log('=== ORDER PAID WEBHOOK TRIGGERED ===');
   console.log('Request URL:', request.url);
   console.log('Request method:', request.method);

@@ -1,8 +1,7 @@
-import { authenticate } from "../shopify.server";
-import db from "../db.server";
-
 export const action = async ({ request }) => {
   try {
+    const { authenticate } = await import("../shopify.server");
+    const db = (await import("../db.server")).default;
     const { topic, shop, payload } = await authenticate.webhook(request);
     
     console.log('Shop data erasure webhook:', { topic, shop, payload });
