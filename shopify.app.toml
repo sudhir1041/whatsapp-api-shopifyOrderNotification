@@ -3,7 +3,7 @@
 client_id = "d202a1f553d02ff71b85d29633119de9"
 name = "WaNotify"
 handle = "wanotify-app-2025"
-application_url = "https://octantal-adriane-removably.ngrok-free.dev"
+application_url = "https://zaptool.online"
 embedded = true
 
 [build]
@@ -59,9 +59,9 @@ scopes = "read_orders,write_orders,write_products,read_customers"
 
 [auth]
 redirect_urls = [
-  "https://octantal-adriane-removably.ngrok-free.dev/auth/callback",
-  "https://octantal-adriane-removably.ngrok-free.dev/auth/shopify/callback", 
-  "https://octantal-adriane-removably.ngrok-free.dev/api/auth/callback"
+  "https://zaptool.online/auth/callback",
+  "https://zaptool.online/auth/shopify/callback", 
+  "https://zaptool.online/api/auth/callback"
 ]
 
 [pos]
