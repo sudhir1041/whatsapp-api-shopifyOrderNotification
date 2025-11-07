@@ -1,5 +1,4 @@
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
 
 export const action = async ({ request }) => {
   try {
@@ -15,7 +14,7 @@ export const action = async ({ request }) => {
     if (customerId) {
       // Delete customer-related data from your database
       console.log(`Erasing data for customer: ${customerId}`);
-      // Add your data deletion logic here
+      // Add your data deletion logic here when database is available
     }
     
     return new Response('OK', { status: 200 });
